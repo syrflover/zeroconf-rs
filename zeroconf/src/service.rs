@@ -1,5 +1,6 @@
 //! Trait definition for cross-platform service.
 
+use crate::util::ByteOrder;
 use crate::{EventLoop, NetworkInterface, Result, ServiceType, TxtRecord};
 use std::any::Any;
 use std::sync::Arc;
@@ -44,6 +45,10 @@ pub trait TMdnsService {
     /// to share state between pre and post-callback. The context type must implement `Any`.
     fn set_context(&mut self, context: Box<dyn Any>);
 
+    fn metadata(&self) -> &MdnsServiceMetadata;
+
+    fn metadata_mut(&mut self) -> &mut MdnsServiceMetadata;
+
     /// Registers and start's the service. Returns an `EventLoop` which can be called to keep
     /// the service alive.
     fn register(&mut self) -> Result<EventLoop>;
@@ -61,9 +66,33 @@ pub type ServiceRegisteredCallback = dyn Fn(Result<ServiceRegistration>, Option<
 /// Represents a registration event for a [`MdnsService`].
 ///
 /// [`MdnsService`]: type.MdnsService.html
-#[derive(Builder, BuilderDelegate, Debug, Getters, Clone, Default, PartialEq, Eq)]
+#[derive(
+    Builder,
+    BuilderDelegate,
+    Debug,
+    Getters,
+    Clone,
+    Default,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
 pub struct ServiceRegistration {
     name: String,
     service_type: ServiceType,
     domain: String,
+}
+
+#[derive(Debug, Default, Setters, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct MdnsServiceMetadata {
+    #[setters(prefix = "set_")]
+    port_endianness: ByteOrder,
+}
+
+impl MdnsServiceMetadata {
+    pub fn port_endianness(&self) -> ByteOrder {
+        self.port_endianness
+    }
 }

@@ -5,6 +5,7 @@ use super::{bonjour_util, constants};
 use crate::ffi::c_str::{self, AsCChars};
 use crate::ffi::{FromRaw, UnwrapOrNull};
 use crate::prelude::*;
+use crate::service::MdnsServiceMetadata;
 use crate::{
     EventLoop, NetworkInterface, Result, ServiceRegisteredCallback, ServiceRegistration,
     ServiceType, TxtRecord,
@@ -27,6 +28,7 @@ pub struct BonjourMdnsService {
     interface_index: u32,
     txt_record: Option<TxtRecord>,
     context: *mut BonjourServiceContext,
+    metadata: MdnsServiceMetadata,
 }
 
 impl TMdnsService for BonjourMdnsService {
@@ -41,6 +43,7 @@ impl TMdnsService for BonjourMdnsService {
             interface_index: constants::BONJOUR_IF_UNSPEC,
             txt_record: None,
             context: Box::into_raw(Box::default()),
+            metadata: MdnsServiceMetadata::default(),
         }
     }
 
@@ -74,6 +77,14 @@ impl TMdnsService for BonjourMdnsService {
         unsafe { (*self.context).user_context = Some(Arc::from(context)) };
     }
 
+    fn metadata(&self) -> &MdnsServiceMetadata {
+        &self.metadata
+    }
+
+    fn metadata_mut(&mut self) -> &mut MdnsServiceMetadata {
+        &mut self.metadata
+    }
+
     fn register(&mut self) -> Result<EventLoop> {
         debug!("Registering service: {:?}", self);
 
@@ -97,7 +108,10 @@ impl TMdnsService for BonjourMdnsService {
                 .regtype(self.kind.as_ptr())
                 .domain(self.domain.as_ref().as_c_chars().unwrap_or_null())
                 .host(self.host.as_ref().as_c_chars().unwrap_or_null())
-                .port(self.port)
+                .port(bonjour_util::parse_port(
+                    self.port,
+                    self.metadata.port_endianness(),
+                ))
                 .txt_len(txt_len)
                 .txt_record(txt_record)
                 .callback(Some(register_callback))

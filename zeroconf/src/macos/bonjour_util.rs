@@ -1,6 +1,7 @@
 //! Utilities related to Bonjour
 
 use super::constants;
+use crate::util::ByteOrder;
 use crate::NetworkInterface;
 
 /// Normalizes the specified domain `&str` to conform to a standard enforced by this crate.
@@ -22,5 +23,12 @@ pub fn interface_index(interface: NetworkInterface) -> u32 {
     match interface {
         NetworkInterface::Unspec => constants::BONJOUR_IF_UNSPEC,
         NetworkInterface::AtIndex(i) => i,
+    }
+}
+
+pub fn parse_port(i: u16, byte_order: ByteOrder) -> u16 {
+    match byte_order {
+        ByteOrder::Default | ByteOrder::BigEndian => i.to_be(),
+        ByteOrder::LittleEndian => i.to_le(),
     }
 }
