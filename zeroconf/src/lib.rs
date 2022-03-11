@@ -117,7 +117,7 @@ extern crate derive_builder;
 extern crate zeroconf_macros;
 #[cfg(target_os = "linux")]
 extern crate avahi_sys;
-#[cfg(target_vendor = "apple")]
+#[cfg(any(target_vendor = "apple", target_os = "windows"))]
 extern crate bonjour_sys;
 #[macro_use]
 extern crate derive_getters;
@@ -150,6 +150,8 @@ pub mod txt_record;
 pub mod linux;
 #[cfg(target_vendor = "apple")]
 pub mod macos;
+#[cfg(target_os = "windows")]
+pub mod windows;
 
 pub use browser::{ServiceDiscoveredCallback, ServiceDiscovery};
 pub use interface::*;
@@ -162,6 +164,9 @@ pub type MdnsBrowser = linux::browser::AvahiMdnsBrowser;
 /// Type alias for the platform-specific mDNS browser implementation
 #[cfg(target_vendor = "apple")]
 pub type MdnsBrowser = macos::browser::BonjourMdnsBrowser;
+/// Type alias for the platform-specific mDNS browser implementation
+#[cfg(target_os = "windows")]
+pub type MdnsBrowser = windows::browser::BonjourMdnsBrowser;
 
 /// Type alias for the platform-specific mDNS service implementation
 #[cfg(target_os = "linux")]
@@ -169,6 +174,9 @@ pub type MdnsService = linux::service::AvahiMdnsService;
 /// Type alias for the platform-specific mDNS service implementation
 #[cfg(target_vendor = "apple")]
 pub type MdnsService = macos::service::BonjourMdnsService;
+/// Type alias for the platform-specific mDNS service implementation
+#[cfg(target_os = "windows")]
+pub type MdnsService = windows::service::BonjourMdnsService;
 
 /// Type alias for the platform-specific structure responsible for polling the mDNS event loop
 #[cfg(target_os = "linux")]
@@ -176,6 +184,9 @@ pub type EventLoop<'a> = linux::event_loop::AvahiEventLoop<'a>;
 /// Type alias for the platform-specific structure responsible for polling the mDNS event loop
 #[cfg(target_vendor = "apple")]
 pub type EventLoop<'a> = macos::event_loop::BonjourEventLoop<'a>;
+/// Type alias for the platform-specific structure responsible for polling the mDNS event loop
+#[cfg(target_os = "windows")]
+pub type EventLoop<'a> = windows::event_loop::BonjourEventLoop<'a>;
 
 /// Type alias for the platform-specific structure responsible for storing and accessing TXT
 /// record data
@@ -185,6 +196,10 @@ pub type TxtRecord = linux::txt_record::AvahiTxtRecord;
 /// record data
 #[cfg(target_vendor = "apple")]
 pub type TxtRecord = macos::txt_record::BonjourTxtRecord;
+/// Type alias for the platform-specific structure responsible for storing and accessing TXT
+/// record data
+#[cfg(target_os = "windows")]
+pub type TxtRecord = windows::txt_record::BonjourTxtRecord;
 
 /// Result type for this library
 pub type Result<T> = std::result::Result<T, error::Error>;

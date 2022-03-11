@@ -18,7 +18,7 @@ derive-getters = "0.2.0"
 derive_builder = "0.9.0"
 derive-new = "0.5.8"
 log = "0.4.11"
-libc = "0.2.77"
+libc = "0.2.119"
 zeroconf-macros = { path = "../zeroconf-macros", version = "0.1.2" }
 
 [dev-dependencies]
@@ -30,7 +30,11 @@ serde_json = "1.0.57"
 avahi-sys = "0.10.0"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
-bonjour-sys = "0.1.0"
+bonjour-sys = { git = "https://github.com/syrflover/bonjour-sys", branch = "win" }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+bonjour-sys = { git = "https://github.com/syrflover/bonjour-sys", branch = "win" }
+windows-sys = { version = "0.33.0", features = ["Win32_Networking", "Win32_Networking_WinSock"] }
 
 [package.metadata.docs.rs]
 default-target = "x86_64-unknown-linux-gnu"

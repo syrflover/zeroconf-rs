@@ -100,3 +100,84 @@ pub(crate) mod macos {
         }
     }
 }
+
+#[cfg(target_os = "windows")]
+pub(crate) mod windows {
+    use crate::Result;
+    use std::time::Duration;
+    use std::{mem, ptr};
+    use windows_sys::Win32::Networking::WinSock as winsock;
+
+    /*
+
+    #define FD_SET(fd, set) do {
+        u_int i;
+        for (i = 0; i < ((fd_set FAR *)(set))->fd_count; i++) {
+            if (((fd_set FAR *)(set))->fd_array[i] == (fd)) {
+                break;
+            }
+        }
+        if (i == ((fd_set FAR *)(set))->fd_count) {
+            if (((fd_set FAR *)(set))->fd_count < FD_SETSIZE) {
+                ((fd_set FAR *)(set))->fd_array[i] = (fd);
+                ((fd_set FAR *)(set))->fd_count++;
+            }
+        }
+    } while(0)
+
+    #define FD_ZERO(set) (((fd_set FAR *)(set))->fd_count=0)
+
+    */
+    #[allow(non_snake_case)]
+    fn FD_SET(fd: i32, set: &mut winsock::fd_set) {
+        let mut i = 0;
+
+        while i < set.fd_count {
+            i += 1;
+
+            if set.fd_array[i as usize] == fd as usize {
+                break;
+            }
+        }
+
+        if i == set.fd_count && set.fd_count < winsock::FD_SETSIZE {
+            set.fd_array[i as usize] = fd as usize;
+            set.fd_count += 1;
+        }
+    }
+
+    #[allow(non_snake_case)]
+    fn FD_ZERO(set: &mut winsock::fd_set) {
+        set.fd_count = 0;
+    }
+
+    /// Performs a unix `select()` on the specified `sock_fd` and `timeout`. Returns the select result
+    /// or `Err` if the result is negative.
+    ///
+    /// # Safety
+    /// This function is unsafe because it directly interfaces with C-library system calls.
+    pub unsafe fn read_select(sock_fd: i32, timeout: Duration) -> Result<u32> {
+        let mut read_flags: winsock::fd_set = mem::zeroed();
+
+        FD_ZERO(&mut read_flags);
+        FD_SET(sock_fd, &mut read_flags);
+
+        let tv_sec = timeout.as_secs() as i32;
+        let tv_usec = timeout.subsec_micros() as i32;
+        let timeout = winsock::timeval { tv_sec, tv_usec };
+
+        let result = winsock::select(
+            sock_fd + 1,
+            &mut read_flags,
+            ptr::null_mut(),
+            ptr::null_mut(),
+            &timeout,
+        );
+
+        if result < 0 {
+            Err("select(): returned error status".into())
+        } else {
+            Ok(result as u32)
+        }
+    }
+}

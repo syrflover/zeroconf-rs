@@ -13,7 +13,7 @@ macro_rules! c_string {
     };
 }
 
-#[cfg(target_vendor = "apple")]
+#[cfg(any(target_vendor = "apple", target_os = "windows"))]
 macro_rules! bonjour {
     ($call:expr, $msg:expr) => {{
         #[allow(unused_unsafe)]
